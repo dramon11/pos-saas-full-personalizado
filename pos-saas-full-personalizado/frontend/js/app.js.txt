@@ -1,0 +1,80 @@
+let carrito = [];
+
+document.getElementById('login').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  const response = await fetch('https://pos-saas-backend.yourdomain.workers.dev/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await response.json();
+
+  if (data.token) {
+    localStorage.setItem('token', data.token);
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    cargarModulo('ventas');
+  }
+});
+
+// Pestañas
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    document.getElementById(tab.dataset.tab).classList.remove('hidden');
+    cargarModulo(tab.dataset.tab);
+  });
+});
+
+function cargarModulo(nombre) {
+  switch (nombre) {
+    case 'ventas':
+      cargarVentas();
+      break;
+    case 'inventario':
+      cargarProductos();
+      break;
+    case 'clientes':
+      cargarClientes();
+      break;
+    case 'reportes':
+      cargarReportes();
+      break;
+  }
+}
+
+async function cargarVentas() {
+  // Aquí se carga el panel de ventas
+  document.getElementById('carrito').innerHTML = '<p>Carrito vacío</p>';
+}
+
+async function cargarProductos() {
+  const response = await fetch('https://pos-saas-backend.yourdomain.workers.dev/api/products');
+  const productos = await response.json();
+  const lista = document.getElementById('productos-lista');
+  lista.innerHTML = productos.map(p => `<p>${p.name} - $${p.price} - Stock: ${p.stock}</p>`).join('');
+}
+
+async function cargarClientes() {
+  const response = await fetch('https://pos-saas-backend.yourdomain.workers.dev/api/customers');
+  const clientes = await response.json();
+  const lista = document.getElementById('clientes-lista');
+  lista.innerHTML = clientes.map(c => `<p>${c.name} - ${c.email}</p>`).join('');
+}
+
+async function cargarReportes() {
+  const response = await fetch('https://pos-saas-backend.yourdomain.workers.dev/api/reports/sales');
+  const reportes = await response.json();
+  const lista = document.getElementById('reportes-ventas');
+  lista.innerHTML = reportes.map(r => `<p>ID: ${r.id} - Total: $${r.total} - Fecha: ${r.date}</p>`).join('');
+}
+
+document.getElementById('logout').addEventListener('click', () => {
+  localStorage.removeItem('token');
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('login-form').classList.remove('hidden');
+});
